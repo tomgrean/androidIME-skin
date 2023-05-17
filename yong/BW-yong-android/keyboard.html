@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <link id="css" rel="stylesheet" type="text/css" href="keyboardl.css" />
+  </head>
+  <script>
+    var KEY_TAG = navigator.userAgent.indexOf("Trident") > 0 ? "DIV" : "BUTTON";
+    /* 垂直划动可输出长按字符，横向划动解除 */
+    const FLICK_SENSITIVITY_X = 20; /* 划动的横向灵敏度，单位像素，距离越短越容易解除 */
+    const FLICK_SENSITIVITY_Y = 20; /* 划动的竖向灵敏度，单位像素，距离越短越容易触发 */
+    /* timer */
+    const REPEAT_RATE = 90;
+    const REPEAT_TIMEOUT = 480; //自动重复时间
+    const MENU_TIMEOUT = 300; //长按时间
+    /* key code */
+    const KEYCODE_SHIFT = -1;
+    const KEYCODE_STATE = -2;
+    const KEYCODE_MENU = -3;
+    const KEYCODE_SWITCH_number = -10;
+    const KEYCODE_SWITCH_english = -11;
+    const KEYCODE_SWITCH_number2 = -12;
+    const KEYCODE_SWITCH_index = -13;
+    const KEYCODE_SWITCH_index0 = -14;
+    const KEYCODE_SWITCH_index1 = -15;
+    const KEYCODE_SWITCH_index2 = -16;
+    const KEYCODE_SWITCH_index3 = -17;
+    const KEYCODE_SWITCH_sf = -18;
+
+    const KEYCODE_DEL = 0x08;
+    const KEYCODE_TAB = 0x09;
+    const KEYCODE_ENTER = 0x0d;
+    const KEYCODE_ESC = 0x1b;
+    const KEYCODE_SPACE = 0x20;
+    const KEYCODE_DEL_F = 0xff;
+    const KEYCODE_CTRL = 0x10000;
+    const KEYCODE_SHIFT_KEY = 0x20000;
+    const KEYCODE_ALT = 0x40000;
+    //二三次选左右shift
+    const KEYCODE_SHIFT_L = 0xe1; //实际应该为 0xe1但是与shift切换中英文冲突所以改了;
+    const KEYCODE_SHIFT_R = 0xe2; //0xe2
+
+    const KEYCODE_a = 0x61;
+    const KEYCODE_b = 0x62;
+    const KEYCODE_c = 0x63;
+    const KEYCODE_d = 0x64;
+    const KEYCODE_e = 0x65;
+    const KEYCODE_f = 0x66;
+    const KEYCODE_g = 0x67;
+    const KEYCODE_h = 0x68;
+    const KEYCODE_i = 0x69;
+    const KEYCODE_j = 0x6a;
+    const KEYCODE_k = 0x6b;
+    const KEYCODE_l = 0x6c;
+    const KEYCODE_m = 0x6d;
+    const KEYCODE_n = 0x6e;
+    const KEYCODE_o = 0x6f;
+    const KEYCODE_p = 0x70;
+    const KEYCODE_q = 0x71;
+    const KEYCODE_r = 0x72;
+    const KEYCODE_s = 0x73;
+    const KEYCODE_t = 0x74;
+    const KEYCODE_u = 0x75;
+    const KEYCODE_v = 0x76;
+    const KEYCODE_w = 0x77;
+    const KEYCODE_x = 0x78;
+    const KEYCODE_y = 0x79;
+    const KEYCODE_z = 0x7a;
+    const KEYCODE_A = 0x41;
+    const KEYCODE_B = 0x42;
+    const KEYCODE_C = 0x43;
+    const KEYCODE_D = 0x44;
+    const KEYCODE_E = 0x45;
+    const KEYCODE_F = 0x46;
+    const KEYCODE_G = 0x47;
+    const KEYCODE_H = 0x48;
+    const KEYCODE_I = 0x49;
+    const KEYCODE_J = 0x4a;
+    const KEYCODE_K = 0x4b;
+    const KEYCODE_L = 0x4c;
+    const KEYCODE_M = 0x4d;
+    const KEYCODE_N = 0x4e;
+    const KEYCODE_O = 0x4f;
+    const KEYCODE_P = 0x50;
+    const KEYCODE_Q = 0x51;
+    const KEYCODE_R = 0x52;
+    const KEYCODE_S = 0x53;
+    const KEYCODE_T = 0x54;
+    const KEYCODE_U = 0x55;
+    const KEYCODE_V = 0x56;
+    const KEYCODE_W = 0x57;
+    const KEYCODE_X = 0x58;
+    const KEYCODE_Y = 0x59;
+    const KEYCODE_Z = 0x5a;
+
+    const KEYCODE_HOME = 0xff50;
+    const KEYCODE_END = 0xff57;
+    const KEYCODE_LEFT = 0xff51;
+    const KEYCODE_UP = 0xff52;
+    const KEYCODE_RIGHT = 0xff53;
+    const KEYCODE_DOWN = 0xff54;
+
+    const YK_VIRT_ADD = 0x0800002; //加词键
+    const YK_VIRT_DEL = 0x0800003; //删词键
+
+    const CTRL_UP = 0x1ff52;
+    const CTRL_DOWN = 0x1ff54;
+    var SCALE = 100;
+    var scale1 = 108;
+    var leftRight = 3;
+    var changeScalec;
+    var isLandscape = false;
+    var keyCodetemp = -12;
+    // var isLeft = false;
+    /* old browser support */
+    function getDataset(e, m) {
+      var ret;
+      do {
+        if (e.dataset) ret = e.dataset[m];
+        else ret = e.getAttribute("data-" + m);
+        if (!ret) e = e.parentElement;
+      } while (!ret && e);
+      return ret;
+    }
+
+    function setDataset(e, m, v) {
+      if (e.dataset) e.dataset[m] = v;
+      else e.setAttribute("data-" + m, v);
+    }
+
+    function addClass(e, c) {
+      if (e.classList) {
+        e.classList.add(c);
+        return;
+      }
+      var temp = e.className;
+      var classList = temp ? temp.split(/\s+/) : [];
+      classList.push(c);
+      temp = classList.join(" ");
+      e.className = temp;
+    }
+
+    function removeClass(e, c) {
+      if (e.classList) {
+        e.classList.remove(c);
+        return;
+      }
+      var temp = e.className;
+      var classList = temp ? temp.split(/\s+/) : [];
+      var dirty = -1;
+      for (var i = 0; i < classList.length; i++) {
+        if (classList[i] == c) dirty = i;
+      }
+      if (dirty != -1) {
+        classList.splice(dirty, 1);
+        temp = classList.join(" ");
+        e.className = temp;
+      }
+    }
+    /* keyboard layout */
+    var Keyboards = {
+      english: {
+        shifted: false,
+        alt: {
+          1: "!",
+          2: "@",
+          3: "#",
+          4: "$",
+          5: "%",
+          6: "^",
+          7: "&",
+          8: "*",
+          9: "\(",
+          0: ")",
+          q: "`",
+          w: "?",
+          e: "~",
+          r: "￥",
+          t: "\\",
+          y: "_",
+          u: "\{",
+          i: "}",
+          o: "\[",
+          p: "]",
+          a: "全",
+          s: "/",
+          d: "‰",
+          f: "Tab",
+          g: "+",
+          h: "←",
+          k: "↑",
+          j: "↓",
+          l: "→",
+          z: "|",
+          x: "剪",
+          c: "复",
+          v: "粘",
+          b: "-",
+          n: "=",
+          m: "…",
+          "'": '"',
+          ";": ":",
+          ".": ">",
+          ",": "<",
+          "▲": "→|",
+          "中文/En": "M",
+          "回车": "|←",
+          "☯": "符",
+          "退": "<del>行</del>"
+        },
+        upper: {
+          q: "Q",
+          w: "W",
+          e: "E",
+          r: "R",
+          t: "T",
+          y: "Y",
+          u: "U",
+          i: "I",
+          o: "O",
+          p: "P",
+          a: "A",
+          s: "S",
+          d: "D",
+          f: "F",
+          g: "G",
+          h: "H",
+          j: "J",
+          k: "K",
+          l: "L",
+          z: "Z",
+          x: "X",
+          c: "C",
+          v: "V",
+          b: "B",
+          n: "N",
+          m: "M"
+        },
+        key: [
+          [
+            { v: "1" },
+            { v: "2" },
+            { v: "3" },
+            { v: "4" },
+            { v: "5" },
+            { v: "找", h: true, s: true },
+            { v: "到", h: true, s: true },
+            { v: "对", h: true, s: true },
+            { v: "应", h: true, s: true },
+            { v: "6" },
+            { v: "7" },
+            { v: "8" },
+            { v: "9" },
+            { v: "0" }
+          ],
+          [
+            { v: "q" },
+            { v: "w" },
+            { v: "e" },
+            { v: "r" },
+            { v: "t" },
+            { v: "1", h: true, s: true },
+            { v: "2", h: true, s: true },
+            { v: "3", h: true, s: true },
+            { v: "+", h: true, s: true },
+            { v: "y" },
+            { v: "u" },
+            { v: "i" },
+            { v: "o" },
+            { v: "p" }
+          ],
+          [
+            { v: "a", r: 1.5 },
+            { v: "s" },
+            { v: "d" },
+            { v: "f" },
+            { v: "g" },
+            { v: "4", h: true, s: true },
+            { v: "5", h: true, s: true },
+            { v: "6", h: true, s: true },
+            { v: "*", h: true, s: true },
+            { v: "h" },
+            { v: "j" },
+            { v: "k" },
+            { v: "l", r: 1.5 }
+          ],
+          [
+            { v: "▲", c: KEYCODE_SHIFT, s: true },
+            { v: "z" },
+            { v: "x" },
+            { v: "c" },
+            { v: "v" },
+            { v: "b" },
+            { v: "7", h: true, s: true },
+            { v: "8", h: true, s: true },
+            { v: "9", h: true, s: true },
+            { v: "0", h: true, s: true },
+            { v: "n" },
+            { v: "m" },
+            { v: ";", s: true },
+            { v: "退", c: KEYCODE_DEL, s: true }
+          ],
+          [
+            { v: "中文/En", c: KEYCODE_STATE, r: 1.25, s: true },
+            { v: "☯", c: KEYCODE_SWITCH_number2, r: 1.25, s: true },
+
+            { v: ",", r: 1.25, s: false },
+            { v: " ", c: KEYCODE_SPACE, r: 2.5 },
+            { v: " ", r: 4, h: true, s: true },
+            { v: ".", r: 1.25, s: false },
+            { v: "'" },
+
+            { v: "回车", r: 1.5, c: KEYCODE_ENTER, s: true }
+          ]
+        ]
+      },
+      //number为外文字母
+      number: {
+        shifted: false,
+        alt: {
+          "▲": "→|",
+          "中文/En": "M",
+          "回车": "|←",
+          ".": ",",
+          "退": "<del>行</del>",
+          "☯": "数"
+        },
+        upper: {
+          "α": "Α",
+          "β": "Β",
+          "γ": "Γ",
+          "δ": "Δ",
+          "ε": "Ε",
+          "ζ": "Ζ",
+          "η": "Η",
+          "θ": "Θ",
+          "ι": "Ι",
+          "κ": "Κ",
+          "λ": "Λ",
+          "μ": "Μ",
+          "ν": "Ν",
+          "ξ": "Ξ",
+          "ο": "Ο",
+          "π": "Π",
+          "ρ": "Ρ",
+          "σ": "Σ",
+          "τ": "Τ",
+          "υ": "Υ",
+          "φ": "Φ",
+          "χ": "Χ",
+          "ψ": "Ψ",
+          "ω": "Ω",
+        },
+        key: [
+          [
+            { v: "1", r: 1.15 },
+            { v: "2", r: 1.1 },
+            { v: "3", r: 1.1 },
+            { v: "4", r: 1.1 },
+            { v: "找", h: true, s: true },
+            { v: "到", h: true, s: true },
+            { v: "对", h: true, s: true },
+            { v: "应", h: true, s: true },
+            { v: "5", r: 1.1 },
+            { v: "6", r: 1.1 },
+            { v: "7", r: 1.1 },
+            { v: "8", r: 1.1 },
+            { v: "9", r: 1.15 }
+          ],
+          [
+            { v: "α", r: 1.15 },
+            { v: "β", r: 1.1 },
+            { v: "γ", r: 1.1 },
+            { v: "δ", r: 1.1 },
+            { v: "1", h: true, s: true },
+            { v: "2", h: true, s: true },
+            { v: "3", h: true, s: true },
+            { v: "4", h: true, s: true },
+            { v: "ε", r: 1.1 },
+            { v: "ζ", r: 1.1 },
+            { v: "η", r: 1.1 },
+            { v: "θ", r: 1.1 },
+            { v: "ι", r: 1.15 }
+          ],
+          [
+            { v: "κ", r: 1.15 },
+            { v: "λ", r: 1.1 },
+            { v: "μ", r: 1.1 },
+            { v: "ν", r: 1.1 },
+            { v: "5", h: true, s: true },
+            { v: "6", h: true, s: true },
+            { v: "7", h: true, s: true },
+            { v: "8", h: true, s: true },
+            { v: "ξ", r: 1.1 },
+            { v: "ο", r: 1.1 },
+            { v: "π", r: 1.1 },
+            { v: "ρ", r: 1.1 },
+            { v: "σ", r: 1.15 }
+          ],
+          [
+            { v: "▲", c: KEYCODE_SHIFT, r: 1.1, s: true },
+            { v: "ς", r: 1.1 },
+            { v: "τ", r: 1.1 },
+            { v: "υ", r: 1.1 },
+            { v: "9", h: true, s: true },
+            { v: "0", h: true, s: true },
+            { v: ".", h: true, s: true },
+            { v: ",", h: true, s: true },
+            { v: "φ", r: 1.1 },
+            { v: "χ", r: 1.1 },
+            { v: "ψ", r: 1.1 },
+            { v: "ω", r: 1.1 },
+            { v: "退", c: KEYCODE_DEL, s: true, r: 1.15 }
+          ],
+          [
+            { v: "中文/En", c: KEYCODE_STATE, r: 1.25, s: true },
+            { v: "☯", c: KEYCODE_SWITCH_english, r: 1.25, s: true },
+            { v: "Del", r: 1.1, c: KEYCODE_DEL_F, s: true },
+
+            { v: "0" },
+            { v: " ", r: 2.4, c: KEYCODE_SPACE },
+            { v: " ", r: 4, h: true, s: true },
+            { v: ".", r: 1.2 },
+
+            { v: "回车", r: 1.8, c: KEYCODE_ENTER, s: true }
+          ]
+        ]
+      },
+      number2: {
+        index: 0,
+        shifted: false,
+        alt: {
+          "中文/En": "M",
+          "退": "<del>行</del>",
+          "☯": "符",
+          "'": '"',
+          "+": "角",
+          "-": "秒",
+          "*": "亿",
+          "/": "°",
+          "%": "‰",
+          "\(": "≠",
+          ")": "≈",
+          "←": "拾",
+          "→": "佰",
+          "0": "〇",
+          "1": "一",
+          "2": "二",
+          "3": "三",
+          "4": "四",
+          "5": "五",
+          "6": "六",
+          "7": "七",
+          "8": "八",
+          "9": "九",
+          "\[": "仟",
+          "]": "万",
+          ":": "度",
+          "▲": "分",
+          ".": "元",
+          "角": "秒",
+          " ": "￥",
+          "=": "整",
+          "€": "£",
+          "∑": "∏"
+        },
+        upper: {
+          "※": "⊥",
+          "√": "∠",
+          "€": "⊙",
+          "≈": "∞",
+          "≤": "∩",
+          "≥": "∪",
+          "≠": "∫",
+          "¢": "∧",
+          "±": "∨",
+          "©": "∴",
+          "®": "∵",
+          "§": "∈",
+          "~": "≌",
+          "_": "∝",
+          "∑": "≡",
+          "÷": "∮",
+          "×": "∥",
+          "0": "零",
+          "1": "壹",
+          "2": "贰",
+          "3": "叁",
+          "4": "肆",
+          "5": "伍",
+          "6": "陆",
+          "7": "柒",
+          "8": "捌",
+          "9": "玖"
+        },
+        //key0为数字
+        key0: [
+          [
+            { v: "@", c: KEYCODE_SWITCH_sf, r: 1.15 },
+            { v: "'", r: 1.1 },
+            { v: "找", h: true, s: true },
+            { v: "到", h: true, s: true },
+            { v: "对", h: true, s: true },
+            { v: "应", h: true, s: true },
+            { v: "+", r: 1.1 },
+            { v: "-", r: 1.1 },
+            { v: "*", r: 1.1 },
+            { v: "/", r: 1.1 },
+            { v: "%", r: 1.15 },
+            { v: "\(", r: 1.1 },
+            { v: ")", r: 1.1 }
+          ],
+          [
+            { v: "←", c: KEYCODE_LEFT, r: 1.5 },
+            { v: "→", c: KEYCODE_RIGHT, r: 1.5 },
+            { v: "@", c: KEYCODE_SWITCH_sf, h: true, s: true },
+            { v: "'", h: true, s: true },
+            { v: "+", h: true, s: true },
+            { v: "-", h: true, s: true },
+            { v: "1", r: 1.83 },
+            { v: "2", r: 1.83 },
+            { v: "3", r: 1.83 },
+            { v: "%", r: 1.5 }
+          ],
+          [
+            { v: "\[", r: 1.5 },
+            { v: "]", r: 1.5 },
+            { v: "\(", h: true, s: true },
+            { v: ")", h: true, s: true },
+            { v: "*", h: true, s: true },
+            { v: "/", h: true, s: true },
+            { v: "4", r: 1.83 },
+            { v: "5", r: 1.83 },
+            { v: "6", r: 1.83 },
+            { v: ":", r: 1.5 }
+          ],
+          [
+            { v: "▲", c: KEYCODE_SHIFT, r: 1.5, s: true },
+            { v: ".", r: 1.5 },
+            { v: "%", h: true, s: true },
+            { v: "◇", h: true, s: true },
+            { v: "☆", h: true, s: true },
+            { v: "△", h: true, s: true },
+            { v: "7", r: 1.83 },
+            { v: "8", r: 1.83 },
+            { v: "9", r: 1.83 },
+            { v: "退", c: KEYCODE_DEL, r: 1.5, s: true }
+          ],
+          [
+            { v: "中文/En", c: KEYCODE_STATE, s: true, r: 1.25 },
+            { v: "☯", c: KEYCODE_SWITCH_english, s: true, r: 1.25 },
+            { v: "☯2", c: KEYCODE_SWITCH_index1, s: true },
+
+            { v: " ", r: 2, c: KEYCODE_SPACE },
+            { v: " ", r: 4, h: true, s: true },
+            { v: "0", r: 1.5 },
+
+            { v: "=", r: 1.5 },
+            { v: "回车", c: KEYCODE_ENTER, r: 1.5, s: true }
+          ]
+        ],
+        //key1准备放符号
+        key1: [
+          [
+            { v: "÷", r: 1.15 },
+            { v: "×", r: 1.1 },
+            { v: "找", h: true, s: true },
+            { v: "到", h: true, s: true },
+            { v: "对", h: true, s: true },
+            { v: "应", h: true, s: true },
+            { v: "~", r: 1.1 },
+            { v: "_", r: 1.1 },
+            { v: "|", r: 1.1 },
+            { v: "※", r: 1.1 },
+            { v: "√", r: 1.15 },
+            { v: "{", r: 1.1 },
+            { v: "}", r: 1.1 }
+          ],
+          [
+            { v: "²", r: 1.5 },
+            { v: "³", r: 1.5 },
+            { v: "÷", h: true, s: true },
+            { v: "×", h: true, s: true },
+            { v: "~", h: true, s: true },
+            { v: "_", h: true, s: true },
+            { v: "°", r: 1.83 },
+            { v: "©", r: 1.83 },
+            { v: "®", r: 1.83 },
+            { v: "§", r: 1.5 }
+          ],
+          [
+            { v: "<", r: 1.5 },
+            { v: ">", r: 1.5 },
+            { v: "|", h: true, s: true },
+            { v: "※", h: true, s: true },
+            { v: "√", h: true, s: true },
+            { v: "{", h: true, s: true },
+            { v: "±", r: 1.83 },
+            { v: "«", r: 1.83 },
+            { v: "»", r: 1.83 },
+            { v: "∑", r: 1.5 }
+          ],
+          [
+            { v: "▲", c: KEYCODE_SHIFT, r: 1.5, s: true },
+            { v: "€", r: 1.5 },
+            { v: "}", h: true, s: true },
+            { v: "←", h: true, s: true },
+            { v: "↓", h: true, s: true },
+            { v: "→", h: true, s: true },
+            { v: "¢", r: 1.83 },
+            { v: "≈", r: 1.83 },
+            { v: "≤", r: 1.83 },
+            { v: "退", c: KEYCODE_DEL, r: 1.5, s: true }
+          ],
+          [
+            { v: "中文/En", c: KEYCODE_STATE, s: true, r: 1.25 },
+            { v: "☯", c: KEYCODE_SWITCH_english, s: true, r: 1.25 },
+            { v: "☯1", c: KEYCODE_SWITCH_index0, s: true },
+
+            { v: " ", r: 2, c: KEYCODE_SPACE },
+            { v: " ", r: 4, h: true, s: true },
+            { v: "≥", r: 1.5, s: false },
+
+            { v: "≠", r: 1.5 },
+            { v: "回车", c: KEYCODE_ENTER, r: 1.5, s: true }
+          ]
+        ]//,
+        //key2未想好
+        //key2: []
+      }
+    };
+    Keyboards.number2.keys = [Keyboards.number2.key0,Keyboards.number2.key1/*,Keyboards.number2.key2*/];
+    Keyboards.number2.key = Keyboards.number2.keys[Keyboards.number2.index];
+
+    //draw the keyboard to screen
+    var Render = (function () {
+      var _ime;
+      var _state = 0;
+      var _layout;
+      var _code = {};
+      var _cand = [];
+      var _page;
+      var _select = 0;
+      var _hint = true;
+
+      var _menuKey;
+      var _candidatePanel;
+      var _codePanel;
+      var _windowWidth;
+
+      function _buildKey(label, className, width, dataset, altNote) {
+        var altNoteHTML = "";
+        if (altNote) {
+          altNoteHTML = '<div class="alt-note">' + altNote + "</div>";
+        }
+        if (_layout.shifted) {
+          var temp = _layout.upper[label];
+          if (temp) label = temp;
+        }
+        var content = '<button class="keyboard-key ' + className + '"';
+        // 为可变次选键加id
+        // if(label == '中文'  )//转换输入法后label已不是"中文"
+        //通过altNote值判断
+        if (altNote == "M") content += ' id="switchKey"';
+        if (label == "☯") content += ' id="switchNumpadKey"';
+        dataset.forEach(function (data) {
+          content += data;
+        });
+        if (altNote) {
+          if (altNote == '"') content += " data-alt='\"'";
+          else content += ' data-alt="' + altNote + '" ';
+        }
+        content += ' style="width: ' + width + '"';
+        content += '><span class="visual-wrapper"><span>' + label + "</span>" + altNoteHTML + "</span></button>";
+        if (KEY_TAG == "DIV") {
+          content = content.replace(/button/g, "div");
+        }
+        return content;
+      }
+
+      function init(keyboard) {
+        _ime = document.getElementById(keyboard);
+      }
+
+      function getWidth() {
+        return _windowWidth;
+      }
+
+      function getHeight() {
+        return _ime.clientHeight;
+      }
+
+      function setKeyboard(layout) {
+        _layout = layout;
+      }
+
+      function hasUpper(code) {
+        return code in _layout.upper;
+      }
+
+      function setSubKeyboard(index) {
+        if (!_layout.keys) return;
+        _layout.index = index;
+        _layout.key = _layout.keys[index];
+      }
+
+      function draw() {
+        var content = "";
+        var first = true;
+        var layoutWidth = _layout.width || 10;
+        var totalWidth = document.body.clientWidth;
+        // { 判断是否为横屏
+
+        if (App.debug) {
+          if (totalWidth > window.innerWidth || totalWidth > window.innerHeight) isLandscape = true;
+          else isLandscape = false;
+        } else {
+          var screen_w, screen_h;
+          screen_w = screen.width / window.devicePixelRatio;
+          screen_h = screen.height / window.devicePixelRatio;
+          if (screen.width > screen.height || (screen.width < screen.height && totalWidth > screen.width)) {
+            isLandscape = true;
+          } else isLandscape = false;
+          // console.log(totalWidth);
+          // console.log(screen_w);
+          // console.log(screen.width);
+        }
+        // 若是横屏，改成每行14键
+        if (isLandscape) layoutWidth = _layout.width || 14;
+        // } 结束
+        //单手
+        var kb = document.getElementById("keyboard");
+
+        // layoutWidth=layoutWidth/SCALE*100;
+
+        if (leftRight == 2) {
+          kb.style.width = SCALE + "%";
+          kb.style.paddingLeft = 0;
+          // kb.style.float="left";
+          layoutWidth = (layoutWidth / SCALE) * 100;
+        } else if (leftRight == 1) {
+          layoutWidth = (layoutWidth / SCALE) * 100;
+
+          kb.style.width = SCALE + "%";
+          // kb.style.float="right";
+          kb.style.paddingLeft = 100 - SCALE + "%";
+        } else if (leftRight == 3) {
+          layoutWidth = (layoutWidth / SCALE) * 100;
+          kb.style.width = "100%";
+          kb.style.paddingLeft = 0;
+        } else {
+          layoutWidth = (layoutWidth / SCALE) * 100;
+          kb.style.width = "100%";
+          kb.style.paddingLeft = 0;
+        }
+
+        //  console.log(layoutWidth+"layoutWidth");
+        //layoutWidth=layoutWidth*scale1/100;
+        var placeHolderWidth = totalWidth / layoutWidth;
+        content += "<div id='keyboard-candidate-panel'></div>";
+        content += "<div id='keyboard-code-panel' style='display:none'></div>";
+        _layout.key.forEach(function buildKeyboardRow(row, nrow) {
+          var firstRow = " first-row";
+          if (first) {
+            firstRow = " first-row";
+            if (isLandscape) {
+              content += '<div class="keyboard-row' + firstRow + '" style="display:none"' + ">";
+            } else content += '<div class="keyboard-row' + firstRow + '">';
+            first = false;
+          } else {
+            if (!isLandscape) {
+              firstRow = "";
+            }
+            content += '<div class="keyboard-row' + firstRow + '">';
+            firstRow = "";
+          }
+          row.forEach(function buildKeyboardColumns(key, ncolumn) {
+            // { 不是横屏时，隐藏带"h:true"的键
+            if ("h" in key) {
+              if (!isLandscape && key.h) return;
+            }
+            // } 结束
+            var keyChar = key.v;
+            if (key.c == KEYCODE_STATE || key.c == KEYCODE_SPACE) {
+              if (document.title.length > 0 && _state == 0) keyChar = document.title.substring(0, 3);
+              else if (key.c == KEYCODE_STATE) {
+                // keyChar=key.v.split('/')[_state];
+                keyChar = "En";
+              }
+            }
+            if ("c" in key) {
+              var code = key.c;
+            } else {
+              var code = keyChar.length == 1 ? keyChar.charCodeAt(0) : 0;
+              if (code >= 255) code = 0;
+            }
+            var className = key.s ? "special-key" : "";
+            if (code == KEYCODE_SHIFT) {
+				if (_layout.shifted == 2) className += " kbr-key-active2";
+				else if (_layout.shifted) className += " kbr-key-active";
+			}
+            if (code == KEYCODE_SWITCH_index) className += " kbr-key-active";
+            var ratio = key.r || 1;
+            var keyWidth = placeHolderWidth * ratio;
+            var dataset = ['data-row="' + nrow + '"', 'data-column="' + ncolumn + '"', 'data-keycode="' + code + '"'];
+            if (keyChar == '"') {
+              dataset.push("data-label='\"'");
+            } else {
+              dataset.push('data-label="' + keyChar + '"');
+            }
+            if (key.c == KEYCODE_STATE || key.c == KEYCODE_SPACE) {
+              dataset.push('data-state="' + key.v + '"');
+            }
+            content += _buildKey(keyChar, className, keyWidth + "px", dataset, _layout.alt[key.v]);
+          });
+          content += "</div>";
+        });
+        _ime.innerHTML = content + '<div style="text-align:center;" ontouchstart="App.hide()">收起键盘</div>';
+        var changeScale;
+        if (App.debug) {
+          if (isLandscape) changeScale = window.innerWidth / 72;
+          else changeScale = window.innerWidth / 30;
+        } else {
+          if (isLandscape) changeScale = ((window.innerWidth / 80) * scale1) / 100;
+          else changeScale = ((window.innerWidth / 30) * 1.1 * scale1) / 100;
+        }
+        changeScalec = changeScale;
+        document.documentElement.style.fontSize = changeScale + "px";
+
+        _candidatePanel = document.getElementById("keyboard-candidate-panel");
+        _codePanel = document.getElementById("keyboard-code-panel");
+
+        showCandidates(_cand, _select, _page, _code);
+
+        _windowWidth = totalWidth;
+        return true;
+      }
+
+      function highlightKey(key) {
+        var orig = key;
+        while (key.nodeName == "SPAN") key = key.parentElement;
+        if (!key) return;
+        if (!getDataset(key, "keycode")) {
+          setDataset(orig, "active", "1");
+
+          return;
+        }
+
+        if (_hint)addClass(key, "highlighted");
+        else addClass(key, "highlighted2");
+      }
+
+      function unHighlightKey(key) {
+        var orig = key;
+        while (key && key.nodeName == "SPAN") key = key.parentElement;
+        if (!key) return;
+        if (!getDataset(key, "keycode")) {
+          setDataset(orig, "active", "");
+          return;
+        }
+        if (_hint) removeClass(key, "highlighted");
+        else removeClass(key, "highlighted2");
+      }
+
+      function setShifted(state) {
+        if (_layout.shifted == state) return;
+        _layout.shifted = state;
+
+        var key = document.querySelector(KEY_TAG + '[data-keycode="' + KEYCODE_SHIFT + '"]');
+        if (!key) return;
+
+        if (state == 2) {
+          addClass(key, "kbr-key-active2");
+        } else if (state) {
+          addClass(key, "kbr-key-active");
+        } else {
+          removeClass(key, "kbr-key-active2");
+          removeClass(key, "kbr-key-active");
+        }
+        var keys = document.querySelectorAll(".keyboard-key");
+        for (var i = 0; i < keys.length; ++i) {
+          key = keys[i];
+          var label = getDataset(key, "label");
+          var label0 = "中";
+          if (_layout.shifted) label = _layout.upper[label];
+          if (label) {
+            key.querySelector("span > span").textContent = label;
+          }
+        }
+      }
+
+      function isShifted() {
+        return _layout.shifted;
+      }
+
+      function setState(state, name) {
+        if (_state == state && document.title == name) return;
+        if (name) document.title = name;
+        _state = state;
+
+        var key = document.querySelector(KEY_TAG + '[data-keycode="' + KEYCODE_STATE + '"]');
+        var keysp = document.querySelector(KEY_TAG + '[data-keycode="' + KEYCODE_SPACE + '"]');
+        if (!key) return;
+        if (!keysp) return;
+        var label;
+        if (document.title.length > 0 && _state == 0) {
+          label = document.title.substring(0, 3);
+          label0 = "中";
+        } else {
+          label = " ";
+          label0 = "En";
+        }
+        setDataset(key, "label", label0);
+        setDataset(keysp, "label", label);
+        var ele = key.querySelector("span > span");
+        var elesp = keysp.querySelector("span > span");
+        ele.textContent = label0;
+        elesp.textContent = label;
+      }
+
+      function getState() {
+        return _state;
+      }
+
+      function showToolbar() {
+        var list = [
+          { title: "左", tool: "0" },
+          { title: "高", tool: "6" },
+          { title: "复", tool: "2" },
+          { title: "粘", tool: "3" },
+          { title: "全", tool: "4" },
+          { title: "<>", tool: "5" },
+          { title: "暗", tool: "8" },
+          { title: "宽", tool: "7" },
+          { title: "右", tool: "9" },
+          { title: "语", tool: "1" }
+        ];
+        var oCss = document.getElementById("css");
+        // console.log(oCss.href.substr(-12));
+        if (oCss.href.substr(-12) == "keyboard.css") {
+          list[6].title = "暗";
+          // console.log("暗");
+        } else {
+          list[6].title = "明";
+        }
+        _candidatePanel.innerHTML = "";
+        var fragment = document.createDocumentFragment();
+        for (var i = 0; i < list.length; i++) {
+          var span = document.createElement("span");
+          span.textContent = list[i].title;
+
+          span.style.fontSize = changeScalec * 1.5 + "px";
+
+          setDataset(span, "tool", list[i].tool);
+
+          addClass(span, "tool");
+          fragment.appendChild(span);
+        }
+        _candidatePanel.appendChild(fragment);
+      }
+
+      function showCode(code) {
+        if (!_codePanel) return;
+        _codePanel.innerHTML = "";
+        if (code && (code.code || code.got)) {
+          if (code.got) {
+            var s = code.got;
+            for (var i = 0; i < s.length; i++) {
+              var span = document.createElement("span");
+              addClass(span, "code-got");
+              span.textContent = s[i];
+              _codePanel.appendChild(span);
+            }
+          }
+          if (code.code) {
+            var spans = [];
+            var s = code.code;
+            for (var i = 0; i < s.length; i++) {
+              var span = document.createElement("span");
+              addClass(span, "code-text");
+              span.textContent = s[i] == " " ? "\xa0" : s[i];
+              spans.push(span);
+            }
+            var span = document.createElement("span");
+            addClass(span, "code-caret");
+            if (code.caret == -1 || code.caret == s.length) {
+              spans.push(span);
+            } else {
+              spans.splice(code.caret, 0, span);
+            }
+            for (var i = 0; i < spans.length; i++) _codePanel.appendChild(spans[i]);
+          } else {
+            var span = document.createElement("span");
+            addClass(span, "code-caret");
+            _codePanel.appendChild(span);
+          }
+          _codePanel.style.display = "";
+          if (leftRight == 1) {
+            _codePanel.style.left = "calc(" + "1rem" + " + " + (100 - SCALE) + "%";
+          } else {
+            _codePanel.style.left = "1rem";
+          }
+        } else {
+          _codePanel.style.display = "none";
+        }
+        _code = code;
+      }
+
+      function showCandidates(candidates, select, page, tips, code) {
+        if (!candidates) return;
+        _candidatePanel.innerHTML = "";
+
+        showCode(code);
+        if (candidates.length > 0) {
+          var fragment = document.createDocumentFragment();
+
+          candidates.forEach(function buildCandidateEntry(candidate, index) {
+            var span = document.createElement("span");
+            setDataset(span, "selection", true);
+            setDataset(span, "data", select == -1 ? -1 : index);
+            span.textContent = candidate;
+            if (index == select) addClass(span, "first");
+            if (tips && tips[index]) {
+              var tipSpan = document.createElement("label");
+              addClass(tipSpan, "codetip");
+              tipSpan.textContent = tips[index];
+
+              span.appendChild(tipSpan);
+            }
+            //候选序号
+            var spanNum = document.createElement("label");
+            addClass(spanNum, "codetip");
+            spanNum.textContent = 1 + index + ".";
+
+            fragment.appendChild(spanNum);
+            //序号end
+            fragment.appendChild(span);
+          });
+          if (page) {
+            var span = document.createElement("span");
+            setDataset(span, "selection", true);
+            setDataset(span, "page", true);
+            span.textContent = "...";
+            fragment.appendChild(span);
+          }
+          _candidatePanel.scrollLeft = 0;
+          _candidatePanel.appendChild(fragment);
+          _cand = candidates;
+          _page = page;
+          _select = select;
+          //候选够才显示次选键,_cand才是真正的候选
+          if (_cand.length > 1) wildcardReplaceSwitchKey(true); //不能用tips[1]来判断,有编码提示的才在tips[1],
+          else wildcardReplaceSwitchKey(false);
+          if (_cand.length > 2) wildcardReplaceSwitchNumpadKey(true);
+          else wildcardReplaceSwitchNumpadKey(false);
+        } else {
+          _cand.length = 0;
+          _select = 0;
+          showToolbar();
+          wildcardReplaceSwitchKey(false);
+          wildcardReplaceSwitchNumpadKey(false);
+        }
+      }
+      function wildcardReplaceSwitchNumpadKey(flag) {
+        //if flag is true, change LABEL_SWITCH_number('123') to Esc,
+        //if flag is false, change Esc back to LABEL_SWITCH_number('123').
+        // var key = document.querySelector(KEY_TAG+'[data-row="4"][data-column="1"]');
+        var state = document.querySelector("button[data-keycode='-12']");
+        // var key=document.querySelector("button[data-keycode='-2']");
+        var key = document.querySelector("#switchNumpadKey");
+        if (!key) return;
+        var label;
+        var keycode;
+        if (flag) {
+          label = "三选";
+          if (getDataset(key, "keycode") != KEYCODE_SHIFT_R) {
+            keyCodetemp = getDataset(key, "keycode");
+          }
+          keycode = KEYCODE_SHIFT_R;
+
+          /*label ="Esc";
+           keycode =27;*/
+        } else {
+          label = "☯";
+          if (getDataset(key, "keycode") != KEYCODE_SHIFT_R) {
+            keyCodetemp = getDataset(key, "keycode");
+          }
+          if (keyCodetemp) {
+            keycode = keyCodetemp;
+          }
+          // if (getDataset(key, "alt") == "符") {
+          //   //以后只能首页有"符"了
+
+          //   keycode = KEYCODE_SWITCH_number2;
+          // } else {
+          //   keycode = KEYCODE_SWITCH_english;
+          // }
+        }
+        setDataset(key, "label", label);
+        setDataset(key, "keycode", keycode);
+        var ele = key.querySelector("span > span");
+        ele.innerHTML = label;
+      }
+      function wildcardReplaceSwitchKey(flag) {
+        //if flag is true, change LABEL_SWITCH_number('123') to Esc,
+        //if flag is false, change Esc back to LABEL_SWITCH_number('123').
+        // var key = document.querySelector(KEY_TAG+'[data-row="4"][data-column="1"]');
+        var state = document.querySelector("button[data-keycode='-2']");
+        // var key=document.querySelector("button[data-keycode='-2']");
+        var key = document.getElementById("switchKey");
+        if (!key) return;
+        var label;
+        var keycode;
+        if (flag) {
+          label = "次选";
+          keycode = KEYCODE_SHIFT_L;
+          /*label ="Esc";
+           keycode =27;*/
+        } else {
+          if (document.title.length > 0 && _state == 0) {
+            label = "中";
+          } else {
+            label = getDataset(key, "state").split("/")[_state];
+          }
+          keycode = KEYCODE_STATE;
+        }
+
+        setDataset(key, "label", label);
+        setDataset(key, "keycode", keycode);
+        var ele = key.querySelector("span > span");
+        ele.innerHTML = label;
+      }
+      function showAlternatives(key) {
+        if (!key) return;
+        if (_menuKey) hideAlternatives();
+        while (key && key.nodeName != KEY_TAG) key = key.parentElement;
+        if (!key) return;
+        var altChars = getDataset(key, "alt");
+        // console.log(altChars);
+        if (!altChars || altChars.length < 1||altChars=="<del>词</del>"||altChars=="<del>行</del>"||altChars=="反查") return;
+        key.querySelector("span > span").textContent = altChars;
+        _menuKey = key;
+        addClass(key, "alt-show");
+        // console.log(getDataset(key, "alt-show"));
+      }
+
+
+      function hideAlternatives() {
+        var key = _menuKey;
+        if (!key) return;
+        _menuKey = undefined;
+        var label = getDataset(key, "label");
+        if (_layout.shifted && _layout.upper[label]) label = _layout.upper[label];
+        if (!label) return;
+        key.querySelector("span > span").textContent = label;
+        removeClass(key, "alt-show");
+      }
+
+      function getCode(key) {
+        if (_menuKey) {
+          var label = getDataset(key, "alt");
+          if (label == "M") return KEYCODE_MENU;
+          else if (label == "↓") return KEYCODE_DOWN;
+          else if (label == "Tab") return KEYCODE_TAB;
+          else if (label == "Esc") return KEYCODE_ESC;
+          else if (label == "↑") return KEYCODE_UP;
+          else if (label == "←") return KEYCODE_LEFT;
+          else if (label == "→") return KEYCODE_RIGHT;
+          else if (label == "|←") return KEYCODE_HOME;
+          else if (label == "→|") return KEYCODE_END;
+          // else if (label == "反查") return KEYCODE_CTRL | "/".charCodeAt(0);
+          else if (label == "全") {
+              return KEYCODE_A ;}
+         else if (label == "剪") return KEYCODE_X;
+         else if (label == "复") return KEYCODE_C;
+         else if (label == "粘") return KEYCODE_V;
+         else if (label == "上") return CTRL_UP;
+          else if (label == "下") return CTRL_DOWN;
+          else if (label == "数") return KEYCODE_SWITCH_number2;
+          else if (label == "符") return KEYCODE_SWITCH_number;
+          if (label.length != 1) return 0;
+          var code = label.charCodeAt(0);
+          if (code >= 255 || isNaN(code)) code = 0;
+          return code;
+        }
+        var keyCode = parseInt(getDataset(key, "keycode"));
+        if (Render.isShifted()) {
+          var label = getDataset(key, "label");
+          if (_layout.shifted) label = _layout.upper[label];
+          if (label) {
+            if (label.length == 1) {
+              keyCode = label.charCodeAt(0);
+              if (keyCode >= 230) {
+                //÷小于255但是无法通过keyCode输出,二三选左右SHIFT的keyCode是225和226
+                keyCode = 0;
+              }
+            } else keyCode = 0;
+          }
+        } else {
+          if ((keyCode >= 230 && keyCode != KEYCODE_DEL_F && keyCode != KEYCODE_LEFT && keyCode != KEYCODE_RIGHT) || isNaN(keyCode)) keyCode = 0;
+        }
+        return keyCode;
+      }
+
+      function getText(key) {
+        if (_menuKey) {
+          var label = getDataset(key, "alt");
+        } else {
+          var label = getDataset(key, "label");
+          if (_layout.shifted) label = _layout.upper[label];
+        }
+        return label;
+      }
+
+      function getSelect() {
+        return _select;
+      }
+
+      function hint(on) {
+        _hint = on;
+      }
+
+      return {
+        init: init,
+        setKeyboard: setKeyboard,
+        setSubKeyboard: setSubKeyboard,
+        draw: draw,
+        getWidth: getWidth,
+        getHeight: getHeight,
+        hasUpper: hasUpper,
+        setShifted: setShifted,
+        isShifted: isShifted,
+        setState: setState,
+        getState: getState,
+        highlightKey: highlightKey,
+        unHighlightKey: unHighlightKey,
+        showCandidates: showCandidates,
+        wildcardReplaceSwitchKey: wildcardReplaceSwitchKey,
+        wildcardReplaceSwitchNumpadKey: wildcardReplaceSwitchNumpadKey,
+        showAlternatives: showAlternatives,
+        // showUppers:showUppers,
+        hideAlternatives: hideAlternatives,
+        getCode: getCode,
+        getText: getText,
+        getSelect: getSelect,
+        hint: hint
+      };
+    })();
+
+    /* handle mouse or touch screen events */
+    var Handler = (function () {
+      var _ime;
+      var _cand;
+      var touchCount = 0;
+      var touchPresent = false;
+      var touchedKeys = {};
+      var touchStart = {};
+      var touchChanged = {};
+      var deleteTimeout;
+      var deleteTimeoutk;
+      var deleteIntervalk;
+      var deleteIntervalkk;
+      var deleteInterval;
+      var menuTimeout;
+      var delayTimeout;
+      var skipKey = false;
+      var scroll = false;
+      var scrollLeft = 0;
+      var scrollDone = false;
+
+      var scrollTimer;
+      var scrollTarget;
+      var flick = false;
+
+      function setCurrentKey(value, touchId) {
+        touchedKeys[touchId].target = value;
+        touchChanged[touchId] = true;
+      }
+
+      //上滑
+      function flickup(target, coords, touchId) {
+        var keycode = Render.getCode(target);
+
+        Render.showAlternatives(target);
+        if (Render.isShifted() == 1) {
+          Render.setShifted(false);
+        }
+        if (keycode == KEYCODE_DEL_F || keycode == KEYCODE_a || keycode == KEYCODE_A || keycode == KEYCODE_x || keycode == KEYCODE_X || keycode == KEYCODE_c || keycode == KEYCODE_C || keycode == KEYCODE_v || keycode == KEYCODE_V || keycode == KEYCODE_SPACE || keycode == KEYCODE_DEL) {
+          skipKey = true;
+          switch (keycode) {
+            case KEYCODE_DEL:
+              var _codePanel = document.getElementById("keyboard-code-panel");
+              if (_codePanel.style.display) {
+                var elk = document.querySelector("#keyboard span.visual-wrapper");
+                elk.classList.add("selected");
+                App.key(KEYCODE_HOME | editorGetShiftk());
+                App.key(keycode);
+                elk.classList.remove("selected");
+              } else {
+                App.key(KEYCODE_ESC);
+              }
+              return;
+
+            case KEYCODE_SPACE:
+              //App.key(KEYCODE_CTRL | "/".charCodeAt(0));
+              App.query(0);
+              return;
+            //case KEYCODE_SHIFT_R:
+            //  App.select(2);
+            //    return;
+            //  case KEYCODE_SHIFT_L:
+            //     App.select(1);
+            //    return;
+            case KEYCODE_a:
+              keycode = App.action("selectAll") | 0;
+              return;
+            case KEYCODE_A:
+              keycode = App.action("selectAll") | 0;
+              return;
+            // case KEYCODE_5:keycode=App.action("selectAll")|0;return;
+            case KEYCODE_c:
+              keycode = App.action("copy") | 0;
+              return; //不要忘了前面if条件也要改
+            case KEYCODE_C:
+              keycode = App.action("copy") | 0;
+              return;
+            // case KEYCODE_8:keycode=App.action("copy")|0;return;
+
+            case KEYCODE_DEL_F:
+              keycode = App.key(YK_VIRT_DEL);
+              return;
+            // case KEYCODE_G:keycode=editor(0)|0;return;
+            case KEYCODE_v:
+              keycode = App.action("paste") | 0;
+              return;
+            case KEYCODE_V:
+              keycode = App.action("paste") | 0;
+              return;
+            // case KEYCODE_9:keycode=App.action("paste")|0;return;
+            case KEYCODE_x:
+              keycode = App.action("cut") | 0;
+              return;
+            case KEYCODE_X:
+              keycode = App.action("cut") | 0;
+              return;
+            // case KEYCODE_7:keycode=App.action("cut")|0;return;
+          }
+        } else if (!keycode && !touchChanged[touchId]) {
+          var index = getDataset(target, "data");
+          if (index === undefined) return;
+          skipKey = true;
+          //App.query(index);
+        }
+      }
+      // function Vwheight(scale1){
+      //   var elks = document.getElementsByClassName("visual-wrapper");
+      //   var elkh=3.5*scale1/100;
+      //   // console.log(elkh);
+      //   // console.log(elks);
+      //   for (let i=0;i< elks.length;i++){
+      //       // console.log(elks[i]);
+      //       elks[i].style.height = elkh + "rem";
+      //       for (let j = 0;j<elks[i].getElementsByTagName("span").length;j++) {
+
+      //       elks[i].getElementsByTagName("span")[j].style.marginTop =( elkh-3.5 )/2+ "rem";
+      //       // console.log(elks);
+      //     }
+      //     }
+      //   }
+
+      function Hl(scale1) {
+        if (scale1 > 110) {
+          if (isLandscape) scale1 = 80;
+          else scale1 = 60;
+        } else {
+          if (isLandscape) scale1 += 10;
+          else scale1 += 8;
+        }
+        return scale1;
+      }
+      function Right(leftRight) {
+        if (leftRight == 1) {
+          if (SCALE <= 80) SCALE = 100;
+          else SCALE -= 4;
+        } else {
+          leftRight = 1;
+          SCALE = 92
+        }
+        return leftRight;
+      }
+      function Slim(leftRight) {
+        if (leftRight == 3) {
+          if (SCALE <= 80) SCALE = 100;
+          else SCALE -= 4;
+        } else {
+            leftRight = 3;
+            SCALE = 100;
+         }
+        return leftRight;
+      }
+      function Left(leftRight) {
+        if (leftRight == 2) {
+          if (SCALE <= 80) SCALE = 100;
+          else SCALE -= 4;
+        } else {
+          leftRight = 2;
+          SCALE = 92;
+        }
+        return leftRight;
+      }
+      function setMenuTimeout(target, coords, touchId) {
+        if (touchCount > 1) return;
+        var keycode = Render.getCode(target);
+        //设置定时器200ms后转换大写(长按)
+
+        menuTimeout = setTimeout(function () {
+          if (Render.hasUpper(target.textContent)) {
+            if (!flick) Render.setShifted(!Render.isShifted());
+          } else if (keycode == KEYCODE_SPACE && !flick) {
+            keycode = App.key(KEYCODE_STATE);
+            skipKey = 1; //加了这个之后endpress()就不会再输出一次
+            // return;
+          //} else if (keycode == KEYCODE_STATE) {
+          //  App.action("switchInputMethod");
+          //  skipKey = 1; //加了这个之后endpress()就不会再输出一次
+          } else Render.showAlternatives(target);
+        }, MENU_TIMEOUT);
+      }
+
+      function startPress(target, coords, touchId) {
+        //playKeySound();
+        if (scrollTimer) return;
+        touchStart[touchId] = Date.now();
+        touchChanged[touchId] = false;
+        skipKey = false;
+        flick = false;
+        App.feedback();
+        var keycode = Render.getCode(target);
+        if (keycode == KEYCODE_DEL || keycode == KEYCODE_DEL_F) {
+          if (Render.getSelect() == -1) {
+            if (keycode == KEYCODE_DEL) skipKey = true;
+            Render.showCandidates([], 0, false);
+          } else {
+            if (keycode == KEYCODE_DEL) skipKey = true;
+            //无编码时或后删键时
+            if (keycode == KEYCODE_DEL) App.key(keycode);
+            deleteTimeout = setTimeout(function () {
+              App.key(keycode);
+              deleteInterval = setInterval(function () {
+                App.key(keycode);
+              }, REPEAT_RATE);
+            }, REPEAT_TIMEOUT);
+          }
+        } else {
+          setMenuTimeout(target, coords, touchId);
+        }
+        Render.highlightKey(target);
+      }
+
+      function movePress(target, coords, touchId) {
+        if (scrollTimer) return;
+        var oldTarget = touchedKeys[touchId].target;
+        if ((!target || !oldTarget || oldTarget == target)&& !flick) return;
+        if (target == oldTarget.parentElement && !flick) return;
+        if(!flick){
+            Render.hideAlternatives();
+        Render.unHighlightKey(oldTarget);
+        Render.highlightKey(target);
+
+        setCurrentKey(target, touchId);
+
+        clearTimeout(deleteTimeout);
+        clearTimeout(deleteTimeoutk);
+        clearInterval(deleteTimeoutk);
+        clearInterval(deleteIntervalk); //停止重复删行
+        clearInterval(deleteIntervalkk); //停止重复删行
+        clearInterval(deleteInterval);
+        clearTimeout(menuTimeout);
+
+        var keycode = Render.getCode(target);
+        if (Render.isShifted() == 1) {
+                Render.setShifted(false);
+              }
+        if (keycode != KEYCODE_DEL&&keycode != KEYCODE_DEL_F) setMenuTimeout(target, coords, touchId);
+            else{
+                return;
+            }
+        }
+      else
+      //if(keycode!=0&&keycode != KEYCODE_DEL&&keycode != KEYCODE_DEL_F)
+      {Render.showAlternatives(target);
+        return;
+      }
+      }
+      function endPress(target, coords, touchId) {
+        // pKeysound();
+        clearTimeout(deleteTimeout);
+        clearTimeout(deleteTimeoutk);
+        clearInterval(deleteTimeoutk);
+        clearInterval(deleteIntervalk);
+        clearInterval(deleteIntervalkk);
+        clearInterval(deleteInterval);
+        clearTimeout(menuTimeout);
+        if (!target) return;
+        if (scrollTimer) {
+        } else if (getDataset(target, "selection")) {
+          if (!scroll || !scrollDone) {
+            var page = getDataset(target, "page");
+            if (page) {
+              App.page();
+            } else {
+              var index = getDataset(target, "data");
+              if (index == -1) {
+                App.text(target.textContent);
+                Render.showCandidates([], 0, false);
+              } else if (!touchChanged[touchId] && !skipKey) {
+                App.select(index);
+              } else if (skipKey) {
+                App.query(index);
+              }
+            }
+          }
+        } else if (getDataset(target, "tool")) {
+          var tool = getDataset(target, "tool");
+          if (tool == "1") App.voice();
+          else if (tool == "0") {
+            leftRight = Left(leftRight);
+            Render.draw();
+          } else if (tool == "2") App.action("copy");
+          else if (tool == "3") App.action("paste"); // emoji(1);
+          else if (tool == "4") App.action("selectAll");
+          else if (tool == "5") editor(0);
+          else if (tool == "6") {
+            scale1 = Hl(scale1); //Vwheight(scale1);
+            Render.draw();
+          } else if (tool == "8") {
+            // console.log(target.innerHTML);
+            var oCss = document.getElementById("css");
+            if (target.innerHTML == "暗") {
+              oCss.href = oCss.href.substr(0, oCss.href.length - 12) + "keyboardl.css";
+              // console.log(oCss.href);
+              target.innerHTML = "明";
+            } else {
+              oCss.href = oCss.href.substr(0, oCss.href.length - 13) + "keyboard.css";
+              // console.log(oCss.href);
+              target.innerHTML = "暗";
+            }
+          } else if (tool == "9") {
+            leftRight = Right(leftRight);
+            Render.draw();
+          } else if (tool == "7") {
+            leftRight = Slim(leftRight);
+            Render.draw();
+          }
+        } else if (!skipKey) {
+          var keyCode = Render.getCode(target);
+          switch (keyCode) {
+            case 0:
+              if (Render.getText(target)) App.text(Render.getText(target));
+              if (Render.isShifted() == 1) {
+                Render.setShifted(false);
+              }
+              break;
+            case KEYCODE_SHIFT:
+              if (!Render.isShifted() || Render.isShifted() == 2) Render.setShifted(!Render.isShifted()); //shift
+              else {
+                Render.setShifted(2);
+                // console.log(Render.isShifted());
+              }
+              break;
+            case KEYCODE_SWITCH_number:
+              Render.setKeyboard(Keyboards.number);
+              if (typeof candidates == "undefined") {
+                Render.draw();
+              } else {
+                Render.showCandidates(candidates, 0, false);
+              }
+              break;
+            case KEYCODE_SWITCH_sf: //输出后返回默认键盘
+              App.text(Render.getText(target));
+              Render.setKeyboard(Keyboards.english);
+              Render.draw();
+              break;
+            case KEYCODE_SWITCH_english:
+              Render.setKeyboard(Keyboards.english);
+              if (typeof candidates == "undefined") {
+                Render.draw();
+              } else {
+                Render.showCandidates(candidates, 0, false);
+              }
+              break;
+            case KEYCODE_SWITCH_number2:
+              Render.setKeyboard(Keyboards.number2);
+              Render.setSubKeyboard(0);//恢复到第一个
+              if (typeof candidates == "undefined") {
+                Render.draw();
+              } else {
+                Render.showCandidates(candidates, 0, false);
+              }
+              break;
+            case KEYCODE_SWITCH_index:
+              break;
+            case KEYCODE_SWITCH_index0:
+              Render.setSubKeyboard(0);
+              Render.draw();
+              break;
+            case KEYCODE_SWITCH_index1:
+              Render.setSubKeyboard(1);
+              Render.draw();
+              break;
+            case KEYCODE_SWITCH_index2:
+              Render.setSubKeyboard(2);
+              Render.draw();
+              break;
+            case KEYCODE_SWITCH_index3:
+              Render.setSubKeyboard(3);
+              Render.draw();
+              break;
+            // case KEYCODE_SPACE:
+            //   break;
+            case KEYCODE_SHIFT_R:
+              App.select(2);
+              break;
+            case KEYCODE_SHIFT_L:
+              App.select(1);
+              break;
+            default:
+              App.key(keyCode);
+              if (Render.isShifted() == 1) {
+                Render.setShifted(false);
+              }
+              break;
+          }
+        }
+        var diff = Date.now() - touchStart[touchId];
+        if (diff >= 0 && diff < 10) {
+          //展示时间
+          delayTimeout = setTimeout(function () {
+            Render.hideAlternatives();
+            Render.unHighlightKey(target);
+            delayTimeout = undefined;
+          }, 200 - diff);
+        } else {
+          Render.hideAlternatives();
+          Render.unHighlightKey(target);
+        }
+      }
+
+      function shouldWeScroll(evt) {
+        if (!evt || !evt.changedTouches || evt.changedTouches.length != 1) return false;
+        var touch = evt.changedTouches[0];
+        var target = touch.target;
+        if (!getDataset(target, "selection")) return false;
+        var cand = (_cand = document.getElementById("keyboard-candidate-panel"));
+        if (!cand) return false;
+        if (cand.scrollWidth <= cand.clientWidth) return false;
+        return true;
+      }
+
+      function handleTouches(evt, callback) {
+        for (var i = 0; i < evt.changedTouches.length; i++) {
+          var touch = evt.changedTouches[i];
+          var touchId = touch.identifier;
+          callback(touch, touchId);
+        }
+      }
+
+      function onTouchStart(evt) {
+        //震动
+        //window.navigator.vibrate(13);
+        //playKeySound();
+
+        touchPresent = true;
+        scroll = shouldWeScroll(evt);
+        evt.preventDefault();
+
+        if (scroll) {
+          scrollLeft = _cand.scrollLeft;
+          scrollDone = false;
+        }
+        touchCount = evt.touches.length;
+        handleTouches(evt, function handleTouchStart(touch, touchId) {
+          var target = touch.target;
+          target.addEventListener("touchmove", onTouchMove);
+          target.addEventListener("touchend", onTouchEnd);
+          target.addEventListener("touchcancel", onTouchEnd);
+          touchedKeys[touchId] = { target: target, x: touch.pageX, y: touch.pageY };
+          startPress(target, touch, touchId);
+        });
+      }
+
+      function onTouchMove(evt) {
+        evt.preventDefault();
+        handleTouches(evt, function handleTouchMove(touch, touchId) {
+          var x = Math.abs(touchedKeys[touchId].x - touch.pageX);
+          var y = Math.abs(touchedKeys[touchId].y - touch.pageY);
+          if (x < 5 && y < 5) return;
+          if (scroll && x > 4) {
+            var temp = _cand.scrollLeft + touchedKeys[touchId].x - touch.pageX;
+            if (temp < 0) temp = 0;
+            else if (temp > _cand.scrollWidth - _cand.clientWidth) temp = _cand.scrollWidth - _cand.clientWidth;
+            _cand.scrollLeft = temp;
+            scrollDone = true;
+          }
+          if (x > FLICK_SENSITIVITY_X) {
+            touchedKeys[touchId].x = touch.pageX;
+            touchedKeys[touchId].y = touch.pageY;
+            var target = document.elementFromPoint(touchedKeys[touchId].x, touchedKeys[touchId].y);
+
+            flick = false;
+            movePress(target, touch, touchId);
+          } else if (y > FLICK_SENSITIVITY_Y) {
+
+             var target = document.elementFromPoint(touchedKeys[touchId].x, touchedKeys[touchId].y);
+
+            flick = true;
+
+           // Render.unHighlightKey(target);
+           movePress(target, touch, touchId);
+            //Render.showAlternatives(target);
+          }
+        });
+      }
+
+      function onTouchEnd(evt) {
+        evt.preventDefault();
+        touchCount = evt.touches.length;
+        // pKeysound();
+        handleTouches(evt, function handleTouchEnd(touch, touchId) {
+          if (!touchedKeys[touchId]) return;
+          var target = touch.target;
+          if (flick) {
+            // Render.showUppers(target);失败的思路
+            //临时上档输出大写
+            //Render.setShifted(!Render.isShifted());
+            flickup(target, touch, touchId);
+            flick = false;
+          }
+          target.removeEventListener("touchmove", onTouchMove);
+          target.removeEventListener("touchend", onTouchEnd);
+          target.removeEventListener("touchcancel", onTouchEnd);
+
+          if (scrollDone && _cand && Date.now() - touchStart[touchId] < 500) {
+            var distance = 0;
+            var x = scrollLeft - _cand.scrollLeft;
+            if (x > 0 && _cand.scrollLeft > 0) {
+              // scroll home
+              distance = _cand.scrollLeft;
+              scrollTarget = 0;
+            } else if (x < 0 && _cand.scrollWidth - _cand.clientWidth > _cand.scrollLeft) {
+              // scroll end
+              distance = _cand.scrollWidth - _cand.clientWidth - _cand.scrollLeft;
+              scrollTarget = _cand.scrollWidth - _cand.clientWidth;
+            }
+            if (distance > 0 && !scrollTimer) {
+              var scrollCand = _cand;
+              scrollTimer = setInterval(function () {
+                var offset = scrollTarget - scrollCand.scrollLeft;
+                if (Math.abs(offset) <= 1) {
+                  scrollCand.scrollLeft = scrollTarget;
+                  clearInterval(scrollTimer);
+                  scrollCand = undefined;
+                  scrollTimer = setTimeout(function () {
+                    scrollTimer = undefined;
+                  }, 400);
+                  return;
+                }
+                offset /= 10;
+                if (offset > 0) offset = Math.ceil(offset);
+                else offset = Math.floor(offset);
+                scrollCand.scrollLeft += parseInt(offset);
+              }, Math.abs((500 / Math.log(distance / 10)) * Math.log(0.9)));
+            }
+          }
+          endPress(touchedKeys[touchId].target, touch, touchId);
+
+          delete touchedKeys[touchId];
+        });
+        _cand = undefined;
+      }
+
+      function onTouchCancel(evt) {
+        if (!scroll) evt.preventDefault();
+      }
+
+      function onMouseDown(evt) {
+        //playKeySound();
+        evt.preventDefault();
+        if (touchPresent) return;
+        if (evt.button != 0) return;
+        scroll = true;
+        evt.preventDefault();
+        touchedKeys[0] = { target: evt.target, x: 0, y: 0 };
+        startPress(evt.target, evt, 0);
+      }
+
+      function onMouseUp(evt) {
+        // pKeysound();
+        if (touchPresent) return;
+        endPress(evt.target, evt, 0);
+        touchedKeys[0] = undefined;
+      }
+
+      function onMouseMove(evt) {
+        if (touchPresent) return;
+        if (!touchedKeys[0]) return;
+        movePress(evt.target, evt, 0);
+      }
+
+      function onContextMenu(event) {
+        event.preventDefault();
+      }
+
+      var eventHandlers = {
+        touchstart: onTouchStart,
+        mousedown: onMouseDown,
+        mouseup: onMouseUp,
+        mousemove: onMouseMove,
+        contextmenu: onContextMenu
+      };
+
+      function init(keyboard) {
+        _ime = document.getElementById(keyboard);
+        for (var event in eventHandlers) _ime.addEventListener(event, eventHandlers[event]);
+      }
+
+      return {
+        init: init
+      };
+    })();
+
+    var App = (function () {
+      var debug = false; //navigator.userAgent.indexOf("Android")<=0;
+      var initDone = false;
+      function init() {
+        console.log("yong:init");
+        this.initDone = true;
+      }
+      function select(i) {
+        console.log("yong:select " + i);
+      }
+      function key(code) {
+        console.log("yong:key " + code);
+      }
+      function text(t) {
+        console.log("yong:text " + t);
+      }
+      function page() {
+        console.log("yong:page");
+      }
+      function hide() {
+        console.log("yong:hide");
+      }
+      function voice() {
+        console.log("yong:voice");
+      }
+      function feedback() {
+        console.log("yong:feedback");
+      }
+      function query(i) {
+        console.log("yong:query " + i);
+      }
+      function action(type) {
+        console.log("yong:action " + type);
+      }
+
+      return {
+        debug: debug,
+        init: init,
+        initDone: initDone,
+        select: select,
+        key: key,
+        text: text,
+        page: page,
+        hide: hide,
+        voice: voice,
+        feedback: feedback,
+        query: query,
+        action: action
+      };
+    })();
+    function darkCheck() {
+      var oCss = document.getElementById("css");
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        if (oCss.href.substr(oCss.href.length - 12) != "keyboard.css") oCss.href = oCss.href.substr(0, oCss.href.length - 13) + "keyboard.css";
+        // console.log("darkMode");
+      }
+    }
+    function init_keyboard() {
+      Render.init("keyboard");
+      Render.setKeyboard(Keyboards.english);
+      darkCheck();
+      Render.draw();
+      Handler.init("keyboard");
+      App.init();
+      window.addEventListener("resize", function () {
+        if (window.innerWidth == Render.getWidth()) return;
+        emoji(false);
+        Render.draw();
+      });
+      if (App.debug) {
+        Render.showCandidates(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], 0, true, ["a", "b", "c", "d", "e"], { code: "hell o", got: "> ", caret: 3 });
+      }
+    }
+
+    function emoji(show) {
+      overlay("emoji", show);
+    }
+
+    function editor(show) {
+      overlay("editor", show);
+    }
+
+    function editorGetShift() {
+      var el = document.querySelector("#keyboard-overlay button.select");
+      if (!el) return 0;
+      if (el.classList.contains("selected")) return 0x020000;
+      return 0;
+    }
+    function editorGetShiftk() {
+      var elk = document.querySelector("#keyboard span.visual-wrapper");
+      if (!elk) return 0;
+      if (elk.classList.contains("selected")) return 0x020000;
+      return 0;
+    }
+
+    function overlay(type, show) {
+      var div = document.getElementById("keyboard-overlay");
+      if (div) {
+        var cur = getDataset(div, "show");
+        document.body.removeChild(div);
+        if (cur == show) return;
+      }
+      if (show === false) return;
+      var cand = document.getElementById("keyboard-candidate-panel");
+      var keyboard = document.getElementById("keyboard");
+      var width = (keyboard.clientWidth * SCALE) / 100;
+      var height = keyboard.clientHeight - cand.clientHeight;
+      div = document.createElement("DIV");
+
+      setDataset(div, "show", show);
+      div.id = "keyboard-overlay";
+      div.style.left = keyboard.style.paddingLeft;
+      div.style.top = cand.clientHeight + "px";
+      if (leftRight == 2) {
+        width = (width / SCALE) * 100;
+        // console.log(TT);
+      } else if (leftRight == 3) {
+        div.style.left = (100 - SCALE) / 2 + "%";
+      } else if (leftRight == 0) {
+        width = (width / SCALE) * 100;
+      }
+      div.style.width = width + "px";
+      div.style.height = height + "px";
+
+      var div2 = document.createElement("DIV");
+      div2.style.width = keyboard.clientWidth + "px";
+
+      div.appendChild(div2);
+
+      addClass(div, type);
+      if (type == "emoji") {
+      } else if (type == "editor") {
+        var actions = [
+          {
+            text: "全选",
+            left: "5%",
+            top: "42.5%",
+            click: function () {
+              App.action("selectAll");
+            }
+          },
+          {
+            text: "复制",
+            left: "80%",
+            top: "15%",
+            click: function () {
+              App.action("copy");
+            }
+          },
+          {
+            text: "剪切",
+            left: "80%",
+            top: "42.5%",
+            click: function () {
+              App.action("cut");
+            }
+          },
+          {
+            text: "粘贴",
+            left: "80%",
+            top: "70%",
+            click: function () {
+              App.action("paste");
+              keycode = editor(false);
+            }
+          },
+          {
+            text: "Del",
+            left: "24.5%",
+            top: "15%",
+            repeat: true,
+            click: function () {
+              App.key((keycode = KEYCODE_DEL_F));
+            }
+          },
+          {
+            text: "←",
+            left: "24.5%",
+            top: "42.5%",
+            repeat: true,
+            click: function () {
+              App.key(KEYCODE_LEFT | editorGetShift());
+            }
+          },
+          {
+            text: "|←",
+            left: "24.5%",
+            top: "70%",
+            small: true,
+            click: function () {
+              App.key(KEYCODE_HOME | editorGetShift());
+            }
+          },
+          {
+            text: "↑",
+            left: "42.5%",
+            top: "15%",
+            repeat: true,
+            click: function () {
+              App.key(KEYCODE_UP | editorGetShift());
+            }
+          },
+          {
+            text: "↓",
+            left: "42.5%",
+            top: "70%",
+            repeat: true,
+            click: function () {
+              App.key(KEYCODE_DOWN | editorGetShift());
+            }
+          },
+          {
+            text: "退",
+            left: "60.5%",
+            top: "15%",
+            repeat: true,
+            click: function () {
+              App.key(KEYCODE_DEL);
+            }
+          },
+          {
+            text: "→",
+            left: "60.5%",
+            top: "42.5%",
+            repeat: true,
+            click: function () {
+              App.key(KEYCODE_RIGHT | editorGetShift());
+            }
+          },
+          {
+            text: "→|",
+            left: "60.5%",
+            top: "70%",
+            small: true,
+            click: function () {
+              App.key(KEYCODE_END | editorGetShift());
+            }
+          },
+          {
+            text: "返回",
+            left: "5%",
+            top: "15%",
+            click: function () {
+              keycode = editor(false);
+            }
+          },
+          {
+            text: "造词",
+            left: "5%",
+            top: "70%",
+            click: function () {
+              App.key(YK_VIRT_ADD);
+              editor(false);
+              // Render.setKeyboard(Keyboards.english);
+              // if (typeof candidates == "undefined") {
+              //   Render.draw();
+              // } else {
+              //   Render.showCandidates(candidates, 0, false);
+              // }
+            }
+          }
+        ];
+        //div2.addEventListener('touchstart',App.feedback);
+        div2.addEventListener("touchstart", function (e) {
+          App.feedback();
+          var ele = e.target;
+          if (ele.tagName != "BUTTON") return;
+          var i = getDataset(ele, "action");
+          //console.log(i);
+          var actionTimeout, actionInterval;
+          if (actions[i].repeat) {
+            actionTimeout = setTimeout(function () {
+              actionTimeout = undefined;
+              actions[i].click();
+              actionInterval = setInterval(function () {
+                actions[i].click();
+              }, REPEAT_RATE);
+            }, REPEAT_TIMEOUT);
+          }
+          var end = function () {
+            if (actionTimeout) {
+              clearTimeout(actionTimeout);
+              actions[i].click(ele);
+              actionTimeout = undefined;
+            } else if (actionInterval) {
+              clearInterval(actionInterval);
+              actionInterval = undefined;
+            } else {
+              actions[i].click(ele);
+            }
+            ele.removeEventListener("touchend", end);
+            ele.removeEventListener("touchcancel", end);
+          };
+          ele.addEventListener("touchend", end);
+          ele.addEventListener("touchcancel", end);
+        });
+        for (var i = 0; i < actions.length; i++) {
+          var one = document.createElement("button");
+          one.textContent = actions[i].text;
+          //if (actions[i].symbol) one.style.fontFamily = "Keyboard Symbols";
+          if (actions[i].repeat || actions[i].small) addClass(one, "arrow");
+          else if (actions[i].select) addClass(one, "select");
+          one.style.left = actions[i].left;
+          one.style.top = actions[i].top;
+          //one.addEventListener('click',actions[i].click);
+
+          setDataset(one, "action", i);
+          div2.appendChild(one);
+        }
+      }
+      document.body.appendChild(div);
+      div.addEventListener("contextmenu", function (e) {
+        e.preventDefault();
+      });
+    }
+  </script>
+  <body onload="init_keyboard();">
+    <div id="keyboard" style="width: 100%" class="candidate-panel"></div>
+  </body>
+</html>
