@@ -831,7 +831,7 @@
         _candidatePanel = document.getElementById("keyboard-candidate-panel");
         _codePanel = document.getElementById("keyboard-code-panel");
 
-        showCandidates(_cand, _select, _page, _code);
+        showCandidates(_cand, _select, _page, null, _code);
 
         _windowWidth = totalWidth;
         return true;
@@ -1304,7 +1304,9 @@
 
             case KEYCODE_SPACE:
               //App.key(KEYCODE_CTRL | "/".charCodeAt(0));
-              App.query(0);
+              var index = Render.getSelect();
+              if (typeof(index)==="undefined")index=0;
+              App.query(index);
               return;
             //case KEYCODE_SHIFT_R:
             //  App.select(2);
