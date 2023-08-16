@@ -13,7 +13,7 @@
     /* timer */
     const REPEAT_RATE = 90;
     const REPEAT_TIMEOUT = 480; //自动重复时间
-    const MENU_TIMEOUT = 300; //长按时间
+    const MENU_TIMEOUT = 500; //长按时间
     /* key code */
     const KEYCODE_SHIFT = -1;
     const KEYCODE_STATE = -2;
@@ -816,7 +816,7 @@
           });
           content += "</div>";
         });
-        _ime.innerHTML = content + '<div style="text-align:center;" ontouchstart="App.hide()">收起键盘</div>';
+        _ime.innerHTML = content;// + '<div style="text-align:center;" ontouchstart="App.hide()">收起键盘</div>';
         var changeScale;
         if (App.debug) {
           if (isLandscape) changeScale = window.innerWidth / 72;
@@ -934,7 +934,7 @@
           { title: "暗", tool: "8" },
           { title: "宽", tool: "7" },
           { title: "右", tool: "9" },
-          { title: "语", tool: "1" }
+          { title: "隐", tool: "1" }
         ];
         var oCss = document.getElementById("css");
         // console.log(oCss.href.substr(-12));
@@ -944,7 +944,6 @@
         } else {
           list[6].title = "明";
         }
-        _candidatePanel.innerHTML = "";
         var fragment = document.createDocumentFragment();
         for (var i = 0; i < list.length; i++) {
           var span = document.createElement("span");
@@ -957,6 +956,7 @@
           addClass(span, "tool");
           fragment.appendChild(span);
         }
+        _candidatePanel.innerHTML = "";
         _candidatePanel.appendChild(fragment);
       }
 
@@ -1049,87 +1049,11 @@
           _cand = candidates;
           _page = page;
           _select = select;
-          //候选够才显示次选键,_cand才是真正的候选
-          if (_cand.length > 1) wildcardReplaceSwitchKey(true); //不能用tips[1]来判断,有编码提示的才在tips[1],
-          else wildcardReplaceSwitchKey(false);
-          if (_cand.length > 2) wildcardReplaceSwitchNumpadKey(true);
-          else wildcardReplaceSwitchNumpadKey(false);
         } else {
           _cand.length = 0;
           _select = 0;
           showToolbar();
-          wildcardReplaceSwitchKey(false);
-          wildcardReplaceSwitchNumpadKey(false);
         }
-      }
-      function wildcardReplaceSwitchNumpadKey(flag) {
-        //if flag is true, change LABEL_SWITCH_number('123') to Esc,
-        //if flag is false, change Esc back to LABEL_SWITCH_number('123').
-        // var key = document.querySelector(KEY_TAG+'[data-row="4"][data-column="1"]');
-        var state = document.querySelector("button[data-keycode='-12']");
-        // var key=document.querySelector("button[data-keycode='-2']");
-        var key = document.querySelector("#switchNumpadKey");
-        if (!key) return;
-        var label;
-        var keycode;
-        if (flag) {
-          label = "三选";
-          if (getDataset(key, "keycode") != KEYCODE_SHIFT_R) {
-            keyCodetemp = getDataset(key, "keycode");
-          }
-          keycode = KEYCODE_SHIFT_R;
-
-          /*label ="Esc";
-           keycode =27;*/
-        } else {
-          label = "☯";
-          if (getDataset(key, "keycode") != KEYCODE_SHIFT_R) {
-            keyCodetemp = getDataset(key, "keycode");
-          }
-          if (keyCodetemp) {
-            keycode = keyCodetemp;
-          }
-          // if (getDataset(key, "alt") == "符") {
-          //   //以后只能首页有"符"了
-
-          //   keycode = KEYCODE_SWITCH_number2;
-          // } else {
-          //   keycode = KEYCODE_SWITCH_english;
-          // }
-        }
-        setDataset(key, "label", label);
-        setDataset(key, "keycode", keycode);
-        var ele = key.querySelector("span > span");
-        ele.innerHTML = label;
-      }
-      function wildcardReplaceSwitchKey(flag) {
-        //if flag is true, change LABEL_SWITCH_number('123') to Esc,
-        //if flag is false, change Esc back to LABEL_SWITCH_number('123').
-        // var key = document.querySelector(KEY_TAG+'[data-row="4"][data-column="1"]');
-        var state = document.querySelector("button[data-keycode='-2']");
-        // var key=document.querySelector("button[data-keycode='-2']");
-        var key = document.getElementById("switchKey");
-        if (!key) return;
-        var label;
-        var keycode;
-        if (flag) {
-          label = "次选";
-          keycode = KEYCODE_SHIFT_L;
-          /*label ="Esc";
-           keycode =27;*/
-        } else {
-          if (document.title.length > 0 && _state == 0) {
-            label = "中";
-          } else {
-            label = getDataset(key, "state").split("/")[_state];
-          }
-          keycode = KEYCODE_STATE;
-        }
-
-        setDataset(key, "label", label);
-        setDataset(key, "keycode", keycode);
-        var ele = key.querySelector("span > span");
-        ele.innerHTML = label;
       }
       function showAlternatives(key) {
         if (!key) return;
@@ -1236,8 +1160,6 @@
         highlightKey: highlightKey,
         unHighlightKey: unHighlightKey,
         showCandidates: showCandidates,
-        wildcardReplaceSwitchKey: wildcardReplaceSwitchKey,
-        wildcardReplaceSwitchNumpadKey: wildcardReplaceSwitchNumpadKey,
         showAlternatives: showAlternatives,
         // showUppers:showUppers,
         hideAlternatives: hideAlternatives,
@@ -1525,7 +1447,7 @@
           }
         } else if (getDataset(target, "tool")) {
           var tool = getDataset(target, "tool");
-          if (tool == "1") App.voice();
+          if (tool == "1") App.hide();
           else if (tool == "0") {
             leftRight = Left(leftRight);
             Render.draw();
